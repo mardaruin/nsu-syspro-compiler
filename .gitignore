@@ -1,6 +1,7 @@
 # Build artifacts
 build/
 test/build/
+test/config.json
 
 # IDE / editor
 .cache

@@ -1,3 +1,2 @@
 /* block comment
-   multi line */
-return 42;
+   multi line */return 42;

@@ -1,0 +1,29 @@
+{
+  "$schema": "schemas/config.schema.json",
+  "build": "",
+  "default_grammar": "1",
+  "versions": [1, 2, 3, 4, 5],
+  "out_dir": "{root}/test/build",
+  "stages": {
+    "lexer": {
+      "cmd": ["python", "{root}/src/spl.py", "--stage", "lexer", "-o", "{tokens_out}", "{input}"],
+      "out": "{tokens_out}",
+      "preprocess": [
+        {"type": "json", "keep": ["kind", "line", "column"]}
+      ]
+    }
+  },
+  "fuzz": {
+    "grammar": {
+      "1": "doc/grammar1.g4",
+      "2": "doc/grammar2.g4",
+      "3": "doc/grammar3.g4",
+      "4": "doc/grammar4.g4",
+      "5": "doc/grammar5.g4"
+    },
+    "count": 40,
+    "max_tokens": 30,
+    "exit": { "lexer": 0 },
+    "stages": ["lexer"]
+  }
+}
