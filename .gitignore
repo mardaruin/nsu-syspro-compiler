@@ -1,7 +1,6 @@
 # Build artifacts
 build/
 test/build/
-test/config.json
 test_out.json
 
 # IDE / editor

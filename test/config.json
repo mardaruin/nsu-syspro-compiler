@@ -6,35 +6,13 @@
   "out_dir": "{root}/test/build",
   "stages": {
     "lexer": {
-      "cmd": ["{root}/build/splc", "-g", "{grammar}", "-t", "{tokens_in}", "{input}"],
+      "cmd": ["python", "{root}/src/spl.py", "--stage", "lexer", "-o", "{tokens_out}", "{input}"],
       "out": "{tokens_out}",
       "preprocess": [
         {"type": "json", "keep": ["kind", "line", "column"]}
       ]
-    },
-    "parser": {
-      "cmd": ["{root}/build/splc", "-g", "{grammar}", "-a", "{ast_in}", "{input}"],
-      "out": "{ast_out}",
-      "preprocess": [
-        {"type": "json", "keep": ["kind", "line", "column"]}
-      ]
-    },
-    "llvm": {
-      "cmd": ["{root}/build/splc", "-g", "{grammar}", "-o", "{llvm_out}", "{input}"],
-      "out": "{llvm_out}",
-      "preprocess": [
-        {"type": "llvm"}
-      ]
-    },
-    "compiler": {
-      "cmd": ["{root}/build/splc", "-g", "{grammar}", "-o", "{exe}", "{input}"]
-    },
-    "run": {
-      "cmd": ["{exe}"],
-      "out": "stdout"
     }
   },
-  "llvm_dis": "llvm-dis",
   "fuzz": {
     "grammar": {
       "1": "doc/grammar1.g4",
