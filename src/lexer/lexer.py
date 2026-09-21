@@ -61,21 +61,24 @@ class Lexer:
                     self._advance()
                 continue
             if ch == "/" and self._peek(1) == "*":
+                closed = False
                 start_line, start_column  = self.line, self.column
                 self._advance()
                 self._advance()
-                while True:
-                    if self._at_end():
-                        tokens.append(self._make(TokenType.ERROR, "Unterminated multi-line comment",
-                                                 start_line, start_column))
-                        return
-                    elif self._peek() == "*" and self._peek(1) == "/":
+                while not self._at_end():
+                    if self._peek() == "*" and self._peek(1) == "/":
                         self._advance()
                         self._advance()
+                        closed = True
                         break
                     self._advance()
-                    continue
-            return
+                if not closed:
+                    tokens.append(self._make(TokenType.ERROR, "Unterminated multi-line comment",
+                                             start_line, start_column))
+                    return
+            else:
+                return
+
 
 
     def _read_identifier(self) -> Token:
@@ -121,7 +124,6 @@ class Lexer:
             return self._make(_SINGLE_CHAR[ch], ch, line, column)
         self._advance()
         return self._make(TokenType.ERROR, f"Unexpected character {ch}", line, column)
-        #raise LexerError (f"unexpected character {ch}", line, column)
 
     def tokenize(self) -> list[Token]:
         tokens: list[Token] = []

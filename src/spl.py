@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lexer import Lexer, LexerError
+from lexer.tokens import KEYWORDS, Token, TokenType
 
 def _read_source(path: str) -> str:
     with open(path, "r", encoding="utf-8", newline="") as f:
@@ -23,12 +24,10 @@ def _emit(data, output_path: str | None) -> None:
         sys.stdout.write("\n")
 
 def _run_lexer(src: str, output_path: str | None) -> int:
-    try:
-        tokens = Lexer(src).tokenize()
-    except LexerError as e:
-        _emit(e.to_json(), output_path)
-        return 1
+    tokens = Lexer(src).tokenize()
     _emit([t.to_json() for t in tokens], output_path)
+    if any(t.type == TokenType.ERROR for t in tokens):
+        return 1
     return 0
 
 def main(argv: list[str] | None = None) -> int:
