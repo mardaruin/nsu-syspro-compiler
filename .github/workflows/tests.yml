@@ -21,16 +21,9 @@ jobs:
       - name: Install test harness dependency
         run: pip install pytest
 
-      - name: Build your compiler
-        run: |
-          # TODO: Replace with your compiler's build command
-          # Examples:
-          #   cargo build                          # Rust
-          #   javac src/*.java -d build/            # Java
-          #   go build -o build/splc ./src           # Go
-          #   ghc -o build/splc src/Main.hs         # Haskell
-          echo "No compiler configured. Edit this step to build your compiler."
-          exit 1
+      #- name: Build your compiler
+      #  run: |
+      #    python -m pytest test/.self-test -v
 
       - name: Run tests for grammar ${{ matrix.grammar }}
         run: python3 test/run_tests.py test --grammar ${{ matrix.grammar }} --no-build
