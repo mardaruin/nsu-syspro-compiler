@@ -796,7 +796,7 @@ def run_plain(config, test, workdir, update, grammar, check_ir=False):
         else:
             out_text = None
 
-    result = Result("PASS", stage, test.name)
+    result = Result("PASS", stage, f"{test.stage}/{test.name}")
     result.command = " ".join(argv)
 
     spec = exit_spec(meta, stage=stage)
@@ -877,7 +877,7 @@ def run_compile(config, test, workdir, update, grammar):
 
     rc, _, stderr = run(argv, timeout=timeout)
 
-    result = Result("PASS", "compiler", test.name)
+    result = Result("PASS", "compiler", f"{test.stage}/{test.name}")
     result.command = " ".join(argv)
 
     spec = exit_spec(meta, stage="compiler", default=0)
@@ -921,7 +921,7 @@ def run_exec(config, test, workdir, update, grammar):
     if not isinstance(run_cfg.get("cmd"), list):
         raise SkipError("stage 'run' requires a 'run' stage with 'cmd' in config")
 
-    result = Result("PASS", "run", test.name)
+    result = Result("PASS", "run", f"{test.stage}/{test.name}")
     ph = make_placeholders(test, workdir, "run", grammar)
     ph["{exe}"] = os.path.join(workdir, "prog")
 
@@ -1047,7 +1047,7 @@ def print_result(result, verbose, no_color=False):
         return COLOR[status] + text + COLOR["RESET"]
 
     head = paint(result.status, result.status)
-    print(f"{head}  {result.name}  ({result.elapsed:.2f}s)")
+    print(f"{head}  {result.stage}/{result.name}  ({result.elapsed:.2f}s)")
     if result.status != "PASS" or verbose:
         if result.command:
             print(f"    command: {result.command}")
