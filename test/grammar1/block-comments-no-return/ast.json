@@ -1,18 +1,13 @@
 {
-  "line": 3,
+  "line": 4,
   "column": 1,
   "kind": "Program",
   "body": [
   {
-    "line": 3,
+    "line": 4,
     "column": 1,
-    "kind": "ExprStmt",
-    "value": {
-      "line": 3,
-      "column": 1,
-      "kind": "IntLiteral",
-      "value": 42
-    }
+    "kind": "Error",
+    "message": "unexpected token 'EOF'"
   }
   ]
 }

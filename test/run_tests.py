@@ -10,7 +10,7 @@ is a directory containing:
                            or a dict mapping stage names to values
   test.spl                source file
   tokens.json             golden token stream     (lexer stage)
-  ast.json                golden AST              (parser stage)
+  ast.json                golden AST              (spl_parser stage)
   out.ll / out.bc         golden LLVM IR          (llvm stage)
   stdout                  golden program output   (run stage)
   stdin                   input for the program   (run stage)
@@ -52,7 +52,7 @@ DEFAULT_OUT_DIR = os.path.join(SCRIPT_DIR, "build")
 
 STAGE_GOLDEN_DEFAULT = {
     "lexer": "tokens.json",
-    "parser": "ast.json",
+    "spl_parser": "ast.json",
     "llvm": "out.ll",
     "run": "stdout",
 }
@@ -69,7 +69,7 @@ DEFAULT_TIMEOUT = 30.0
 DIFF_MAX_LINES = 30
 
 # Canonical stage order for discovery sorting and output grouping
-STAGE_ORDER = ["lexer", "parser", "llvm", "compiler", "run"]
+STAGE_ORDER = ["lexer", "spl_parser", "llvm", "compiler", "run"]
 
 
 class StepError(Exception):
@@ -786,7 +786,7 @@ def run_plain(config, test, workdir, update, grammar, check_ir=False):
         write_file(compare_path, out_text)
         if stage == "lexer":
             write_file(ph["{tokens_in}"], out_text)
-        if stage == "parser":
+        if stage == "spl_parser":
             write_file(ph["{ast_in}"], out_text)
     else:
         out_path = resolve(out_spec, ph)
@@ -865,7 +865,7 @@ def run_compile(config, test, workdir, update, grammar):
     compilation succeeds (exit 0) or matches the expected compiler exit.
     """
     meta = test.meta
-    cfg = config.stage_cfg("compiler")
+    cfg = config.stage_cfg("compile")
     cmd = cfg.get("cmd")
     if not isinstance(cmd, list):
         raise SkipError("stage 'compiler' is not configured (no 'cmd')")
@@ -880,7 +880,12 @@ def run_compile(config, test, workdir, update, grammar):
     result = Result("PASS", "compiler", test.name)
     result.command = " ".join(argv)
 
-    spec = exit_spec(meta, stage="compiler", default=0)
+    #spec = exit_spec(meta, stage="compiler", default=0)
+    e = meta.get("exit", 0)
+    if isinstance(e, dict):
+        spec = e.get("compile", 0)
+    else:
+        spec = 0
     exit_bad = not exit_ok(rc, spec)
     if exit_bad:
         result.lines.append(f"exit: expected {spec!r}, got {rc}")
@@ -914,14 +919,14 @@ def run_exec(config, test, workdir, update, grammar):
     Stdout is compared against the 'stdout' golden file.
     """
     meta = test.meta
-    compile_cfg = config.stage_cfg("compiler")
+    compile_cfg = config.stage_cfg("compile")
     run_cfg = config.stage_cfg("run")
     if not isinstance(compile_cfg.get("cmd"), list):
         raise SkipError("stage 'run' requires a 'compiler' stage with 'cmd' in config")
     if not isinstance(run_cfg.get("cmd"), list):
         raise SkipError("stage 'run' requires a 'run' stage with 'cmd' in config")
 
-    result = Result("PASS", "run", test.name)
+    result = Result("PASS", "compiler", test.name)
     ph = make_placeholders(test, workdir, "run", grammar)
     ph["{exe}"] = os.path.join(workdir, "prog")
 
@@ -957,20 +962,10 @@ def run_exec(config, test, workdir, update, grammar):
 
     golden = golden_path(config, test)
     if update:
-        # Only write the golden file if stdout is non-empty.
-        # Empty stdout files are not committed as goldens.
-        if stdout.strip():
-            write_file(golden, stdout)
-            result.status = "UPD"
-            result.lines.append(f"golden -> {os.path.relpath(golden, SCRIPT_DIR)}")
-        else:
-            # Stdout is empty; remove golden if it exists (empty goldens are
-            # not meaningful) and report success-without-update.
-            if os.path.exists(golden):
-                os.remove(golden)
-                result.lines.append(f"removed empty golden {os.path.relpath(golden, SCRIPT_DIR)}")
-            result.status = "UPD"
-            result.lines.append("stdout empty; no golden written")
+        write_file(golden, stdout)
+        result.status = "UPD"
+        result.lines.append(f"golden -> {os.path.relpath(golden, SCRIPT_DIR)}")
+        result.lines.append("stdout empty; no golden written")
         if exit_bad:
             result.lines.append(
                 "WARNING: exit contract not met; golden updated anyway")
@@ -1047,7 +1042,7 @@ def print_result(result, verbose, no_color=False):
         return COLOR[status] + text + COLOR["RESET"]
 
     head = paint(result.status, result.status)
-    print(f"{head}  {result.name}  ({result.elapsed:.2f}s)")
+    print(f"{head}  {result.stage}/{result.name}  ({result.elapsed:.2f}s)")
     if result.status != "PASS" or verbose:
         if result.command:
             print(f"    command: {result.command}")
@@ -1294,7 +1289,7 @@ def main(argv=None):
                 continue
             print(f"=== {stage.upper()} ===")
             for test in tests_s:
-                print(f"  {test.name}")
+                print(f"  {test.stage}/{test.name}")
         if fuzz_tests:
             print("=== FUZZ ===")
             for test in fuzz_tests:
@@ -1326,11 +1321,11 @@ def main(argv=None):
         print(f"=== {stage_upper} ===")
         for result in results_stage:
             # Strip stage prefix from name when showing under grouped header
-            orig_name = result.name
-            short_name = orig_name.removeprefix(result.stage + "/")
-            result.name = short_name
+            #orig_name = result.name
+            #short_name = orig_name.removeprefix(result.stage + "/")
+            #result.name = short_name
             print_result(result, args.verbose, no_color)
-            result.name = orig_name
+            #result.name = orig_name
         print()
 
     # Now wait for fuzz generation and run the fuzz tests.
