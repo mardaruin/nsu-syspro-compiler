@@ -52,7 +52,7 @@ DEFAULT_OUT_DIR = os.path.join(SCRIPT_DIR, "build")
 
 STAGE_GOLDEN_DEFAULT = {
     "lexer": "tokens.json",
-    "parser": "ast.json",
+    "spl_parser": "ast.json",
     "llvm": "out.ll",
     "run": "stdout",
 }
@@ -69,7 +69,7 @@ DEFAULT_TIMEOUT = 30.0
 DIFF_MAX_LINES = 30
 
 # Canonical stage order for discovery sorting and output grouping
-STAGE_ORDER = ["lexer", "parser", "llvm", "compiler", "run"]
+STAGE_ORDER = ["lexer", "spl_parser", "llvm", "compiler", "run"]
 
 
 class StepError(Exception):
@@ -865,7 +865,7 @@ def run_compile(config, test, workdir, update, grammar):
     compilation succeeds (exit 0) or matches the expected compiler exit.
     """
     meta = test.meta
-    cfg = config.stage_cfg("compiler")
+    cfg = config.stage_cfg("compile")
     cmd = cfg.get("cmd")
     if not isinstance(cmd, list):
         raise SkipError("stage 'compiler' is not configured (no 'cmd')")
@@ -914,7 +914,7 @@ def run_exec(config, test, workdir, update, grammar):
     Stdout is compared against the 'stdout' golden file.
     """
     meta = test.meta
-    compile_cfg = config.stage_cfg("compiler")
+    compile_cfg = config.stage_cfg("compile")
     run_cfg = config.stage_cfg("run")
     if not isinstance(compile_cfg.get("cmd"), list):
         raise SkipError("stage 'run' requires a 'compiler' stage with 'cmd' in config")
@@ -1294,7 +1294,7 @@ def main(argv=None):
                 continue
             print(f"=== {stage.upper()} ===")
             for test in tests_s:
-                print(f"  {test.name}")
+                print(f"  {test.stage}/{test.name}")
         if fuzz_tests:
             print("=== FUZZ ===")
             for test in fuzz_tests:
@@ -1326,11 +1326,11 @@ def main(argv=None):
         print(f"=== {stage_upper} ===")
         for result in results_stage:
             # Strip stage prefix from name when showing under grouped header
-            orig_name = result.name
-            short_name = orig_name.removeprefix(result.stage + "/")
-            result.name = short_name
+            #orig_name = result.name
+            #short_name = orig_name.removeprefix(result.stage + "/")
+            #result.name = short_name
             print_result(result, args.verbose, no_color)
-            result.name = orig_name
+            #result.name = orig_name
         print()
 
     # Now wait for fuzz generation and run the fuzz tests.
