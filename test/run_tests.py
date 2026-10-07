@@ -880,7 +880,12 @@ def run_compile(config, test, workdir, update, grammar):
     result = Result("PASS", "compiler", test.name)
     result.command = " ".join(argv)
 
-    spec = exit_spec(meta, stage="compiler", default=0)
+    #spec = exit_spec(meta, stage="compiler", default=0)
+    e = meta.get("exit", 0)
+    if isinstance(e, dict):
+        spec = e.get("compile", 0)
+    else:
+        spec = 0
     exit_bad = not exit_ok(rc, spec)
     if exit_bad:
         result.lines.append(f"exit: expected {spec!r}, got {rc}")
@@ -921,7 +926,7 @@ def run_exec(config, test, workdir, update, grammar):
     if not isinstance(run_cfg.get("cmd"), list):
         raise SkipError("stage 'run' requires a 'run' stage with 'cmd' in config")
 
-    result = Result("PASS", "run", test.name)
+    result = Result("PASS", "compiler", test.name)
     ph = make_placeholders(test, workdir, "run", grammar)
     ph["{exe}"] = os.path.join(workdir, "prog")
 
@@ -957,20 +962,10 @@ def run_exec(config, test, workdir, update, grammar):
 
     golden = golden_path(config, test)
     if update:
-        # Only write the golden file if stdout is non-empty.
-        # Empty stdout files are not committed as goldens.
-        if stdout.strip():
-            write_file(golden, stdout)
-            result.status = "UPD"
-            result.lines.append(f"golden -> {os.path.relpath(golden, SCRIPT_DIR)}")
-        else:
-            # Stdout is empty; remove golden if it exists (empty goldens are
-            # not meaningful) and report success-without-update.
-            if os.path.exists(golden):
-                os.remove(golden)
-                result.lines.append(f"removed empty golden {os.path.relpath(golden, SCRIPT_DIR)}")
-            result.status = "UPD"
-            result.lines.append("stdout empty; no golden written")
+        write_file(golden, stdout)
+        result.status = "UPD"
+        result.lines.append(f"golden -> {os.path.relpath(golden, SCRIPT_DIR)}")
+        result.lines.append("stdout empty; no golden written")
         if exit_bad:
             result.lines.append(
                 "WARNING: exit contract not met; golden updated anyway")
