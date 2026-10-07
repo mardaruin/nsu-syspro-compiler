@@ -26,7 +26,7 @@ DEFAULT_COMPILER = os.path.join(REPO_ROOT, "build", "splc")
 # Stages that the compiler can be tested against
 # Must match the stage names used by the test harness (run_tests.py)
 # and referenced in meta.json exit/stages fields.
-STAGES = ["lexer", "parser", "llvm"]
+STAGES = ["lexer", "spl_parser", "llvm"]
 
 # Grammar versions to test
 GRAMMARS = ["1", "2", "3", "4", "5"]
@@ -135,7 +135,7 @@ def run_compiler(compiler, grammar, stage, test_spl):
     """
     if stage == "lexer":
         cmd = [compiler, "-g", grammar, "-t", "/dev/stdout", test_spl]
-    elif stage == "parser":
+    elif stage == "spl_parser":
         cmd = [compiler, "-g", grammar, "-a", "/dev/stdout", test_spl]
     elif stage == "llvm":
         cmd = [compiler, "-g", grammar, "-o", "/dev/null", test_spl]
@@ -170,7 +170,7 @@ def test_supported_stages(dirpath, meta):
         if f == "tokens.json":
             found_stages.add("lexer")
         elif f == "ast.json":
-            found_stages.add("parser")
+            found_stages.add("spl_parser")
         elif f in ("out.ll", "out.bc"):
             found_stages.add("llvm")
 

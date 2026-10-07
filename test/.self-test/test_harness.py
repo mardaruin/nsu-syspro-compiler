@@ -9,7 +9,7 @@ Test case layout (new format):
     meta.json        (always created)
     test.spl         (the source)
     tokens.json      (lexer golden)
-    ast.json         (parser golden)
+    ast.json         (spl_parser golden)
     out.ll           (llvm golden)
     stdout           (compiler golden)
 """
@@ -115,7 +115,7 @@ def parser_stage(keep=None):
     }
     if keep is not None:
         stage["preprocess"] = [{"type": "json", "keep": keep}]
-    return {"parser": stage}
+    return {"spl_parser": stage}
 
 
 # ---------------------------------------------------------------------------
@@ -142,7 +142,7 @@ def test_stage_and_name_filters(harness, run):
     })
     rc, out = run(["list", "--config", cfg, "--stage", "lexer"])
     assert rc == 0
-    assert "lexer/alpha" in out and "parser/gamma" not in out
+    assert "lexer/alpha" in out and "spl_parser/gamma" not in out
     rc, out = run(["list", "--config", cfg, "--test", "beta"])
     assert rc == 0
     assert "lexer/beta" in out and "lexer/alpha" not in out

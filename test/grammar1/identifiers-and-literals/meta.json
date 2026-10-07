@@ -9,6 +9,6 @@
     "parser"
   ],
   "exit": {
-    "parser": "nonzero"
+    "parser": 0
   }
 }

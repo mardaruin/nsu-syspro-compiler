@@ -16,12 +16,12 @@
       "op": "/",
       "left": {
         "line": 1,
-        "column": 34,
+        "column": 33,
         "kind": "BinOp",
         "op": "*",
         "left": {
           "line": 1,
-          "column": 24,
+          "column": 23,
           "kind": "BinOp",
           "op": "*",
           "left": {
@@ -82,8 +82,8 @@
     "kind": "Return",
     "value": {
       "line": 2,
-      "column": 9,
-      "kind": "Unary",
+      "column": 8,
+      "kind": "UnaryOp",
       "op": "-",
       "operand": {
         "line": 2,

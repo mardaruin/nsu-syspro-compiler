@@ -10,7 +10,7 @@ is a directory containing:
                            or a dict mapping stage names to values
   test.spl                source file
   tokens.json             golden token stream     (lexer stage)
-  ast.json                golden AST              (parser stage)
+  ast.json                golden AST              (spl_parser stage)
   out.ll / out.bc         golden LLVM IR          (llvm stage)
   stdout                  golden program output   (run stage)
   stdin                   input for the program   (run stage)
@@ -786,7 +786,7 @@ def run_plain(config, test, workdir, update, grammar, check_ir=False):
         write_file(compare_path, out_text)
         if stage == "lexer":
             write_file(ph["{tokens_in}"], out_text)
-        if stage == "parser":
+        if stage == "spl_parser":
             write_file(ph["{ast_in}"], out_text)
     else:
         out_path = resolve(out_spec, ph)
