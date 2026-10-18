@@ -11,6 +11,13 @@
       "preprocess": [
         {"type": "json", "keep": ["kind", "line", "column"]}
       ]
+    },
+    "spl_parser": {
+      "cmd": ["python", "{root}/src/spl.py", "--stage", "parser", "-o", "{ast_out}", "{input}"],
+      "out": "{ast_out}",
+      "preprocess": [
+        {"type": "json", "keep": ["kind", "line", "column", "mut", "name", "value", "op"]}
+      ]
     }
   },
   "fuzz": {
@@ -23,7 +30,7 @@
     },
     "count": 40,
     "max_tokens": 30,
-    "exit": { "lexer": 0 },
-    "stages": ["lexer"]
+    "exit": { "lexer": 0, "spl_parser": 0},
+    "stages": ["lexer", "spl_parser"]
   }
 }
