@@ -572,6 +572,10 @@ def normalize_llvm(text):
                   lambda m: "#" + canon(m.group(1)), text)
     return text
 
+def resolve(text, placeholders):
+    for key, value in placeholders.items():
+        text = text.replace(key, value)
+    return text
 
 def transform(step, in_path, out_path):
     step_type = step.get("type")
@@ -744,6 +748,7 @@ def no_golden_result(result, meta, is_fuzz, stage=None):
 def make_placeholders(test, workdir, stage, grammar):
     return {
         "{root}": REPO_ROOT,
+        "{python}": sys.executable,
         "{input}": test.src_path,
         "{exe}": os.path.join(workdir, "prog"),
         "{grammar}": grammar,
@@ -808,7 +813,8 @@ def run_plain(config, test, workdir, update, grammar, check_ir=False):
     if exit_bad:
         result.lines.append(f"exit: expected {spec!r}, got {rc}")
     if stderr.strip():
-        result.lines.append("stderr: " + stderr.strip().splitlines()[0][:200])
+        for line in stderr.strip().splitlines()[:20]:
+            result.lines.append("stderr: " + line[:300])
 
     if update:
         golden = golden_path(config, test)
