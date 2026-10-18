@@ -73,7 +73,7 @@ DEFAULT_TIMEOUT = 30.0
 DIFF_MAX_LINES = 30
 
 # Canonical stage order for discovery sorting and output grouping
-STAGE_ORDER = ["lexer", "spl_parser", "llvm", "compiler", "run"]
+STAGE_ORDER = ["lexer", "spl_parser", "llvm", "compile", "run"]
 
 
 class StepError(Exception):
@@ -881,13 +881,13 @@ def run_compile(config, test, workdir, update, grammar):
         raise SkipError("stage 'compiler' is not configured (no 'cmd')")
     timeout = meta.get("timeout", cfg.get("timeout", DEFAULT_TIMEOUT))
 
-    ph = make_placeholders(test, workdir, "compiler", grammar)
+    ph = make_placeholders(test, workdir, "compile", grammar)
     ph["{exe}"] = os.path.join(workdir, "prog")
     argv = [resolve(c, ph) for c in cmd]
 
     rc, _, stderr = run(argv, timeout=timeout)
 
-    result = Result("PASS", "compiler", test.name)
+    result = Result("PASS", "compile", test.name)
     result.command = " ".join(argv)
 
     #spec = exit_spec(meta, stage="compiler", default=0)
@@ -936,7 +936,7 @@ def run_exec(config, test, workdir, update, grammar):
     if not isinstance(run_cfg.get("cmd"), list):
         raise SkipError("stage 'run' requires a 'run' stage with 'cmd' in config")
 
-    result = Result("PASS", "compiler", test.name)
+    result = Result("PASS", "compile", test.name)
     ph = make_placeholders(test, workdir, "run", grammar)
     ph["{exe}"] = os.path.join(workdir, "prog")
 
@@ -1017,7 +1017,7 @@ def run_test(config, test, workdir_root, update, grammar, check_ir=False):
     os.makedirs(workdir, exist_ok=True)
     start = time.monotonic()
     try:
-        if test.stage == "compiler":
+        if test.stage == "compile":
             result = run_compile(config, test, workdir, update, grammar)
         elif test.stage == "run":
             result = run_exec(config, test, workdir, update, grammar)
@@ -1165,7 +1165,7 @@ def list_compatibility_matrix(config, test_root, name_filter, stage_filter):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="run_tests.py",
-        description="Compiler sandbox test runner.",
+        description="Compile sandbox test runner.",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", nargs="?", default="test",
                         choices=["build", "test", "update", "list", "list-matrix"])

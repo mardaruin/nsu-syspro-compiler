@@ -18,6 +18,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install LLVM and Clang
+        run: sudo apt-get update && sudo apt-get install -y clang llvm
+
       - name: Install compiler dependencies
         run: |
           python -m pip install --upgrade pip

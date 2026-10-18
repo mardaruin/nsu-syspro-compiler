@@ -25,6 +25,13 @@
       "preprocess": [
         {"type": "llvm"}
       ]
+    },
+    "compile": {
+      "cmd": ["{python}", "{root}/src/spl.py", "--stage", "compile", "-o", "{exe}", "--llvm-out", "{llvm_out}", "{input}"]
+    },
+    "run": {
+      "cmd": ["{exe}"],
+      "out": "stdout"
     }
   },
   "fuzz": {
@@ -37,7 +44,7 @@
     },
     "count": 40,
     "max_tokens": 30,
-    "exit": { "lexer": 0, "spl_parser": 0, "llvm": 0},
-    "stages": ["lexer", "spl_parser", "llvm"]
+    "exit": { "lexer": 0, "spl_parser": 0, "llvm": 0, "compile": 0},
+    "stages": ["lexer", "spl_parser", "llvm", "compile"]
   }
 }
