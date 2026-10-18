@@ -898,12 +898,12 @@ def run_compile(config, test, workdir, update, grammar):
         spec = 0
     exit_bad = not exit_ok(rc, spec)
     if exit_bad:
-        result.lines.append(f"exit: expected {spec!r}, got {rc}")
-    if stderr.strip():
-        result.lines.append("stderr: " + stderr.strip().splitlines()[0][:200])
-
-    if exit_bad:
         result.status = "FAIL"
+        result.lines.append(f"compile failed (exit {rc})")
+        if stderr.strip():
+            result.lines.append("stderr: " + stderr.strip().splitlines()[0][:200])
+        return result
+
 
     if update:
         # compiler stage produces no golden file; nothing to update
