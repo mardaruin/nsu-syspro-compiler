@@ -52,7 +52,7 @@ class Harness:
         meta.json        (always created)
         test.spl         (the source)
         tokens.json      (lexer golden)
-        ast.json         (parser golden)
+        ast.json         (spl_parser golden)
         out.ll           (llvm golden)
         stdout           (compiler golden)
     """

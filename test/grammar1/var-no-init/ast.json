@@ -3,18 +3,7 @@
   "column": 9,
   "kind": "Program",
   "body": [
-  {
-    "line": 2,
-    "column": 9,
-    "kind": "Declare",
-    "mut": "var",
-    "name": "x",
-    "init": {
-      "line": 2,
-      "column": 1,
-      "kind": "Error",
-      "message": "unexpected token 'RETURN'"
-    }
-  }
+  {"line": 1, "column": 6, "kind": "Error", "message": "unexpected token 'SEMI'"},
+  {"line": 2, "column": 9, "kind": "Return", "value": {"line": 2, "column": 8, "kind": "IntLiteral", "value": 0}}
   ]
 }

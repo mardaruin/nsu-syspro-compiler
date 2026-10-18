@@ -1,11 +1,11 @@
 {
   "line": 4,
-  "column": 2,
+  "column": 5,
   "kind": "Program",
   "body": [
   {
     "line": 4,
-    "column": 2,
+    "column": 5,
     "kind": "ExprStmt",
     "value": {
       "line": 4,
