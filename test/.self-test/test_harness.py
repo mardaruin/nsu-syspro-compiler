@@ -540,7 +540,7 @@ def test_compiler_exit_contract(harness, run):
 
 def test_compiler_update_regenerates_and_exit_warning(harness, run):
     stages = compiler_config(compile_exe("import sys;sys.exit(5)"), ["python3", "{exe}"])
-    harness.add_test("hw", src="0;", meta={"exit": 0, "stages": ["compile"]})
+    harness.add_test("hw", src="0;", meta={"exit": 0, "stages": ["compile", "run"]})
     cfg = harness.write_config(stages=stages)
     rc, out = run(["update", "--config", cfg])
     assert rc == 0
