@@ -57,6 +57,10 @@ STAGE_GOLDEN_DEFAULT = {
     "run": "stdout",
 }
 
+STAGE_ALIASES = {
+    "parser" : "spl_parser",
+}
+
 # Which golden files map to which stages (reverse of STAGE_GOLDEN_DEFAULT)
 GOLDEN_TO_STAGE = {v: k for k, v in STAGE_GOLDEN_DEFAULT.items()}
 # Also support .bc as an alternative for llvm

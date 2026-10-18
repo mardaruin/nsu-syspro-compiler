@@ -9,6 +9,6 @@
     "parser"
   ],
   "exit": {
-    "parser": 0
+    "spl_parser": 0
   }
 }

@@ -12,7 +12,7 @@
         {"type": "json", "keep": ["kind", "line", "column"]}
       ]
     },
-    "parser": {
+    "spl_parser": {
       "cmd": ["python", "{root}/src/spl.py", "--stage", "parser", "-o", "{ast_out}", "{input}"],
       "out": "{ast_out}",
       "preprocess": [
@@ -30,7 +30,7 @@
     },
     "count": 40,
     "max_tokens": 30,
-    "exit": { "lexer": 0 },
-    "stages": ["lexer", "parser"]
+    "exit": { "lexer": 0, "spl_parser": 0},
+    "stages": ["lexer", "spl_parser"]
   }
 }
