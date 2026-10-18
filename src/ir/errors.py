@@ -1,0 +1,2 @@
+class CodegenError(Exception):
+    pass

@@ -484,7 +484,7 @@ def test_compiler_run_end_to_end_pass(harness, run):
     cfg = harness.write_config(
         stages=compiler_config(compile_exe('print("hello")'), ["python3", "{exe}"]))
     rc, out = run(["test", "--config", cfg])
-    assert rc == 0 and "PASS  compiler/hw" in out
+    assert rc == 0 and "PASS  compile/hw" in out
 
 
 def test_compiler_stdin_and_run_preprocess(harness, run):
@@ -497,17 +497,17 @@ def test_compiler_stdin_and_run_preprocess(harness, run):
     )
     cfg = harness.write_config(stages=stages)
     rc, out = run(["test", "--config", cfg])
-    assert rc == 0 and "PASS  compiler/hw" in out
+    assert rc == 0 and "PASS  compile/hw" in out
 
 
 def test_compiler_compile_failure(harness, run):
-    harness.add_test("cbad", src="// exit: 3\n", meta={"stages": ["compiler"]})
+    harness.add_test("cbad", src="// exit: 3\n", meta={"stages": ["compile"]})
     stages = {"compile": {"cmd": ["{root}/mock_compiler.py", "{input}"]},
               "run": {"cmd": ["python3", "{exe}"]}}
     cfg = harness.write_config(stages=stages)
     rc, out = run(["test", "--config", cfg])
     assert rc == 1
-    assert "FAIL  compiler/cbad" in out
+    assert "FAIL  compile/cbad" in out
     assert "compile failed (exit 3)" in out
 
 
@@ -517,20 +517,20 @@ def test_compiler_tolerance_pass_and_diff_fail(harness, run):
     harness.add_test("hw", src="0;", stdout=golden)
     harness.add_test("hw", src="0;", stdout=golden, meta={"tolerance": 0.1})
     rc, out = run(["test", "--config", harness.write_config(stages=stages)])
-    assert rc == 0 and "PASS  compiler/hw" in out
+    assert rc == 0 and "PASS  compile/hw" in out
     # Second run with same test but no tolerance in meta -> will fail because
     # the golden differs from actual output. But meta doesn't have tolerance,
     # so we create the test without tolerance meta.
     harness.add_test("hw2", src="0;", stdout=golden)
     rc, out = run(["test", "--config", harness.write_config(stages=stages)])
-    assert rc == 1 and "FAIL  compiler/hw2" in out
+    assert rc == 1 and "FAIL  compile/hw2" in out
 
 
 def test_compiler_exit_contract(harness, run):
     stages = compiler_config(compile_exe("import sys;sys.exit(5)"), ["python3", "{exe}"])
-    harness.add_test("hw", src="0;", meta={"exit": "nonzero", "stages": ["compiler"]})
+    harness.add_test("hw", src="0;", meta={"exit": "nonzero", "stages": ["compile"]})
     rc, out = run(["test", "--config", harness.write_config(stages=stages)])
-    assert rc == 0 and "PASS  compiler/hw" in out
+    assert rc == 0 and "PASS  compile/hw" in out
 
     # Exact 0 contract with a golden -> fails on exit mismatch
     harness.add_test("hw2", src="0;", stdout="unused\n", meta={"exit": 0})
@@ -540,11 +540,11 @@ def test_compiler_exit_contract(harness, run):
 
 def test_compiler_update_regenerates_and_exit_warning(harness, run):
     stages = compiler_config(compile_exe("import sys;sys.exit(5)"), ["python3", "{exe}"])
-    harness.add_test("hw", src="0;", meta={"exit": 0, "stages": ["compiler"]})
+    harness.add_test("hw", src="0;", meta={"exit": 0, "stages": ["compile", "run"]})
     cfg = harness.write_config(stages=stages)
     rc, out = run(["update", "--config", cfg])
     assert rc == 0
-    assert "UPD  compiler/hw" in out
+    assert "UPD  compile/hw" in out
     assert "exit contract not met" in out
     golden = harness.root / "hw" / "stdout"
     assert golden.exists()
