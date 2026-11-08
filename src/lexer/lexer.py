@@ -12,6 +12,20 @@ _SINGLE_CHAR: dict[str, TokenType] = {
     "(": TokenType.LPAREN,
     ")": TokenType.RPAREN,
     ";": TokenType.SEMI,
+    "{": TokenType.LBRACE,
+    "}": TokenType.RBRACE,
+    "<": TokenType.LT,
+    ">": TokenType.GT,
+    "!": TokenType.NOT,
+}
+
+_TWO_CHAR: dict[str, TokenType] = {
+    "==": TokenType.EQ,
+    "!=": TokenType.NE,
+    ">=": TokenType.GE,
+    "<=": TokenType.LE,
+    "&&": TokenType.AND,
+    "||": TokenType.OR,
 }
 
 def _is_digit(ch):
@@ -119,6 +133,11 @@ class Lexer:
             return self._read_identifier()
         if _is_digit(ch):
             return self._read_number()
+        two = ch + self._peek(1)
+        if two in _TWO_CHAR:
+            self._advance()
+            self._advance()
+            return self._make(_TWO_CHAR[two], two, line, column)
         if ch in _SINGLE_CHAR:
             self._advance()
             return self._make(_SINGLE_CHAR[ch], ch, line, column)
