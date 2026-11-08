@@ -6,18 +6,32 @@
   "out_dir": "{root}/test/build",
   "stages": {
     "lexer": {
-      "cmd": ["python", "{root}/src/spl.py", "--stage", "lexer", "-o", "{tokens_out}", "{input}"],
+      "cmd": ["{python}", "{root}/src/spl.py", "--stage", "lexer", "-o", "{tokens_out}", "{input}"],
       "out": "{tokens_out}",
       "preprocess": [
         {"type": "json", "keep": ["kind", "line", "column"]}
       ]
     },
     "spl_parser": {
-      "cmd": ["python", "{root}/src/spl.py", "--stage", "parser", "-o", "{ast_out}", "{input}"],
+      "cmd": ["{python}", "{root}/src/spl.py", "--stage", "parser", "-o", "{ast_out}", "{input}"],
       "out": "{ast_out}",
       "preprocess": [
         {"type": "json", "keep": ["kind", "line", "column", "mut", "name", "value", "op"]}
       ]
+    },
+    "llvm": {
+      "cmd": ["{python}", "{root}/src/spl.py", "--stage", "llvm", "-o", "{ast_out}", "--llvm-out", "{llvm_out}", "{input}"],
+      "out": "{llvm_out}",
+      "preprocess": [
+        {"type": "llvm"}
+      ]
+    },
+    "compile": {
+      "cmd": ["{python}", "{root}/src/spl.py", "--stage", "compile", "-o", "{exe}", "--llvm-out", "{llvm_out}", "{input}"]
+    },
+    "run": {
+      "cmd": ["{exe}"],
+      "out": "stdout"
     }
   },
   "fuzz": {
@@ -30,7 +44,7 @@
     },
     "count": 40,
     "max_tokens": 30,
-    "exit": { "lexer": 0, "spl_parser": 0},
-    "stages": ["lexer", "spl_parser"]
+    "exit": { "lexer": 0, "spl_parser": 0, "llvm": 0, "compile": 0},
+    "stages": ["lexer", "spl_parser", "llvm", "compile"]
   }
 }

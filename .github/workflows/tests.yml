@@ -11,12 +11,20 @@ jobs:
     strategy:
       matrix:
         # Add grammar versions you have implemented (e.g. [1, 2, 3, 4, 5])
-        grammar: [1]
+        grammar: [1, 2]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Install LLVM and Clang
+        run: sudo apt-get update && sudo apt-get install -y clang llvm
+
+      - name: Install compiler dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Install test harness dependency
         run: pip install pytest

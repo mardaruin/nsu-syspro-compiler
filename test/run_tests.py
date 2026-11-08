@@ -73,7 +73,7 @@ DEFAULT_TIMEOUT = 30.0
 DIFF_MAX_LINES = 30
 
 # Canonical stage order for discovery sorting and output grouping
-STAGE_ORDER = ["lexer", "spl_parser", "llvm", "compiler", "run"]
+STAGE_ORDER = ["lexer", "spl_parser", "llvm", "compile", "run"]
 
 
 class StepError(Exception):
@@ -572,6 +572,10 @@ def normalize_llvm(text):
                   lambda m: "#" + canon(m.group(1)), text)
     return text
 
+def resolve(text, placeholders):
+    for key, value in placeholders.items():
+        text = text.replace(key, value)
+    return text
 
 def transform(step, in_path, out_path):
     step_type = step.get("type")
@@ -744,6 +748,7 @@ def no_golden_result(result, meta, is_fuzz, stage=None):
 def make_placeholders(test, workdir, stage, grammar):
     return {
         "{root}": REPO_ROOT,
+        "{python}": sys.executable,
         "{input}": test.src_path,
         "{exe}": os.path.join(workdir, "prog"),
         "{grammar}": grammar,
@@ -808,7 +813,8 @@ def run_plain(config, test, workdir, update, grammar, check_ir=False):
     if exit_bad:
         result.lines.append(f"exit: expected {spec!r}, got {rc}")
     if stderr.strip():
-        result.lines.append("stderr: " + stderr.strip().splitlines()[0][:200])
+        for line in stderr.strip().splitlines()[:20]:
+            result.lines.append("stderr: " + line[:300])
 
     if update:
         golden = golden_path(config, test)
@@ -875,13 +881,13 @@ def run_compile(config, test, workdir, update, grammar):
         raise SkipError("stage 'compiler' is not configured (no 'cmd')")
     timeout = meta.get("timeout", cfg.get("timeout", DEFAULT_TIMEOUT))
 
-    ph = make_placeholders(test, workdir, "compiler", grammar)
+    ph = make_placeholders(test, workdir, "compile", grammar)
     ph["{exe}"] = os.path.join(workdir, "prog")
     argv = [resolve(c, ph) for c in cmd]
 
     rc, _, stderr = run(argv, timeout=timeout)
 
-    result = Result("PASS", "compiler", test.name)
+    result = Result("PASS", "compile", test.name)
     result.command = " ".join(argv)
 
     #spec = exit_spec(meta, stage="compiler", default=0)
@@ -892,12 +898,12 @@ def run_compile(config, test, workdir, update, grammar):
         spec = 0
     exit_bad = not exit_ok(rc, spec)
     if exit_bad:
-        result.lines.append(f"exit: expected {spec!r}, got {rc}")
-    if stderr.strip():
-        result.lines.append("stderr: " + stderr.strip().splitlines()[0][:200])
-
-    if exit_bad:
         result.status = "FAIL"
+        result.lines.append(f"compile failed (exit {rc})")
+        if stderr.strip():
+            result.lines.append("stderr: " + stderr.strip().splitlines()[0][:200])
+        return result
+
 
     if update:
         # compiler stage produces no golden file; nothing to update
@@ -930,7 +936,7 @@ def run_exec(config, test, workdir, update, grammar):
     if not isinstance(run_cfg.get("cmd"), list):
         raise SkipError("stage 'run' requires a 'run' stage with 'cmd' in config")
 
-    result = Result("PASS", "compiler", test.name)
+    result = Result("PASS", "compile", test.name)
     ph = make_placeholders(test, workdir, "run", grammar)
     ph["{exe}"] = os.path.join(workdir, "prog")
 
@@ -1011,7 +1017,7 @@ def run_test(config, test, workdir_root, update, grammar, check_ir=False):
     os.makedirs(workdir, exist_ok=True)
     start = time.monotonic()
     try:
-        if test.stage == "compiler":
+        if test.stage == "compile":
             result = run_compile(config, test, workdir, update, grammar)
         elif test.stage == "run":
             result = run_exec(config, test, workdir, update, grammar)
@@ -1159,7 +1165,7 @@ def list_compatibility_matrix(config, test_root, name_filter, stage_filter):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="run_tests.py",
-        description="Compiler sandbox test runner.",
+        description="Compile sandbox test runner.",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", nargs="?", default="test",
                         choices=["build", "test", "update", "list", "list-matrix"])
