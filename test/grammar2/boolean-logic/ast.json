@@ -37,7 +37,7 @@
     "name": "c",
     "init": {
   "line": 3,
-  "column": 20,
+  "column": 19,
       "kind": "BinOp",
       "op": "||",
       "left": {
@@ -60,8 +60,8 @@
       },
       "right": {
   "line": 3,
-  "column": 20,
-        "kind": "Unary",
+  "column": 19,
+        "kind": "UnaryOp",
         "op": "!",
         "operand": {
   "line": 3,
