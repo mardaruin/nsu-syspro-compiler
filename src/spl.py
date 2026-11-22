@@ -123,7 +123,10 @@ def _run_compile(src: str, exe_path: str, llvm_out: str | None) -> int:
         print("Error: clang not found in PATH. Cannot compile to executable.", file=sys.stderr)
         return 3
 
-    cmd = [clang, ll_path, "-o", exe_path]
+    if sys.platform == "win32":
+        cmd = [clang, "-mconsole", ll_path, "-o", exe_path]
+    else:
+        cmd = [clang, "-nostartfiles", "-Wl,-e,main", ll_path, "-o", exe_path]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
