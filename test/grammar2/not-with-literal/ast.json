@@ -11,8 +11,8 @@
     "name": "x",
     "init": {
   "line": 1,
-  "column": 10,
-      "kind": "Unary",
+  "column": 9,
+      "kind": "UnaryOp",
       "op": "!",
       "operand": {
   "line": 1,

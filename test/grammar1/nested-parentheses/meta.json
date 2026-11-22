@@ -8,7 +8,7 @@
     "lexer",
     "parser",
     "llvm",
-    "compiler",
+    "compile",
     "run"
   ],
   "exit": {

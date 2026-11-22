@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from .ast_nodes import (
     Assign, BinOp, Declare, Error, ExprStmt, Ident,
-    IntLiteral, Program, Return, UnaryOp,
+    IntLiteral, BoolLiteral, Program, Return, UnaryOp,
+    If, While, Break, Continue, Block,
 )
 
 
@@ -34,9 +35,37 @@ def node_to_dict(node):
                 "target": node_to_dict(node.target),
                 "value": node_to_dict(node.value)}
 
+    if isinstance(node, If):
+        return {"line": node.line, "column": node.column,
+                "kind": "If",
+                "cond": node_to_dict(node.cond),
+                "then": node_to_dict(node.then_branch),
+                "else": node_to_dict(node.else_branch)}
+
+    if isinstance(node, While):
+        return {"line": node.line, "column": node.column,
+                "kind": "While",
+                "cond": node_to_dict(node.cond),
+                "body": node_to_dict(node.body)}
+
+    if isinstance(node, Break):
+        return {"line": node.line, "column": node.column, "kind": "Break"}
+
+    if isinstance(node, Continue):
+        return {"line": node.line, "column": node.column, "kind": "Continue"}
+
+    if isinstance(node, Block):
+        return {"line": node.line, "column": node.column,
+                "kind": "Block",
+                "body": [node_to_dict(s) for s in node.body]}
+
     if isinstance(node, IntLiteral):
         return {"line": node.line, "column": node.column,
                 "kind": "IntLiteral", "value": node.value}
+
+    if isinstance(node, BoolLiteral):
+        return {"line": node.line, "column": node.column,
+                "kind": "BoolLiteral", "value": node.value}
 
     if isinstance(node, Ident):
         return {"line": node.line, "column": node.column,
