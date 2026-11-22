@@ -34,10 +34,15 @@ class TokenType(str, Enum):
     OR = "OR"
     NOT = "NOT"
 
+    DEF = "DEF"
+    EXTERN = "EXTERN"
+
     LPAREN = "LPAREN"
     RPAREN = "RPAREN"
     LBRACE = "LBRACE"
     RBRACE = "RBRACE"
+
+    COMMA = "COMMA"
 
     SEMI = "SEMI"
     EOF = "EOF"
@@ -55,6 +60,8 @@ KEYWORDS: dict[str, TokenType] = {
     "continue": TokenType.CONTINUE,
     "true": TokenType.TRUE,
     "false": TokenType.FALSE,
+    "def": TokenType.DEF,
+    "extern": TokenType.EXTERN,
 }
 
 @dataclass(frozen=True)
