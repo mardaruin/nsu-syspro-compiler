@@ -108,10 +108,31 @@ class Block(Stmt):
 
 @dataclass
 class ExprStmt(Stmt):
-    """expressionStatement ::= expression ';'"""
     line: int
     column: int
     value: Expr
+
+@dataclass
+class Call(Expr):
+    line: int
+    column: int
+    callee: Expr
+    args: list[Expr] = field(default_factory=list)
+
+@dataclass
+class ExternDecl(Stmt):
+    line: int
+    column: int
+    name: str
+    params: list[Ident] = field(default_factory=list)
+
+@dataclass
+class FuncDecl(Stmt):
+    line: int
+    column: int
+    name: str
+    params: list[Ident]
+    body: Block
 
 @dataclass
 class Program(Node):
