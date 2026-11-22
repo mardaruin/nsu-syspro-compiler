@@ -5,6 +5,7 @@ from spl_parser.ast_nodes import (
     Expr, Stmt, IntLiteral, BoolLiteral, Ident, BinOp as AstBinOp, UnaryOp as AstUnaryOp,
     Assign, Declare, Return as AstReturn, ExprStmt, Program, Error as AstError,
     If, While, Break, Continue, Block,
+    Call, FuncDecl, ExternDecl,
 )
 
 from .errors import CodegenError
@@ -22,6 +23,9 @@ class LLVMCodeGen:
         self.main_fn: ir.Function | None = None
         self.env: dict[str, ir.AllocaInstr] = {}
         self.loop_stack: list[tuple[ir.BasicBlock, ir.BasicBlock]] = []
+        self.functions: dict[str, ir.Function] = {}
+        self.curr_fn: ir.Function | None = None
+        self.curr_ret: ir.Function | None = None
 
     def generate(self, program: Program) -> ir.Module:
         self.module = ir.Module(name="spl")
@@ -32,21 +36,104 @@ class LLVMCodeGen:
             "f80:128-n8:16:32:64-S128"
         )
         fnty = ir.FunctionType(I64, [])
-        self.main_fn = ir.Function(self.module, fnty, name="main")
-        entry = self.main_fn.append_basic_block(name="entry")
+        self.env = {}
+        self.functions = {}
+        self.loop_stack = []
+        self.curr_fn = None
+        self.main_fn = None
+        self.curr_ret = None
+
+        for node in program.body:
+            if isinstance(node, ExternDecl):
+                self._declare_extern(node)
+            elif isinstance(node, FuncDecl):
+                self._declare_func(node)
+
+        for node in program.body:
+            if isinstance(node, FuncDecl):
+                self._gen_func_body(node)
+
+        top_stmts = [
+            s for s in program.body
+            if not isinstance(s, (FuncDecl, ExternDecl))
+        ]
+
+        if "main" in self.functions:
+            self.main_fn = self.functions["main"]
+            if top_stmts:
+                raise CodegenError(
+                    "top-level statements are not allowed when 'main' is defined"
+                )
+        else:
+            fnty = ir.FunctionType(I64, [])
+            self.main_fn = ir.Function(self.module, fnty, name="main")
+            self.functions["main"] = self.main_fn
+
+            entry = self.main_fn.append_basic_block(name="entry")
+            self.builder = ir.IRBuilder(entry)
+            self.env = {}
+            self.loop_stack = []
+            self.curr_fn = self.main_fn
+
+            for stmt in top_stmts:
+                if self._terminated():
+                    break
+                self._gen_stmt(stmt)
+
+            if not self._terminated():
+                self.builder.ret(ZERO)
+
+        return self.module
+
+    def _declare_extern(self, node: ExternDecl) -> None:
+        fnty = ir.FunctionType(I64, [I64] * len(node.params))
+        fn = ir.Function(self.module, fnty, name=node.name)
+        self.functions[node.name] = fn
+
+    def _declare_func(self, node: FuncDecl) -> None:
+        fnty = ir.FunctionType(I64, [I64] * len(node.params))
+        fn = ir.Function(self.module, fnty, name=node.name)
+        for i, p in enumerate(node.params):
+            fn.args[i].name = p.name
+        self.functions[node.name] = fn
+
+    def _gen_func_body(self, node: FuncDecl) -> None:
+        fn = self.functions[node.name]
+        if node.name == "main":
+            return
+
+        saved_builder = self.builder
+        saved_env = self.env
+        saved_loop = self.loop_stack
+        saved_fn = self.curr_fn
+        saved_ret = self.curr_ret
+
+        entry = fn.append_basic_block(name="entry")
         self.builder = ir.IRBuilder(entry)
         self.env = {}
         self.loop_stack = []
+        self.curr_fn = fn
+        self.curr_ret = self.builder.alloca(I64, name="retval")
 
-        for stmt in program.body:
-            if self._terminated():
-                break
-            self._gen_stmt(stmt)
+        for i, p in enumerate(node.params):
+            with self.builder.goto_entry_block():
+                ptr = self.builder.alloca(I64, name=p.name)
+            self.builder.store(fn.args[i], ptr)
+            self.env[p.name] = ptr
+
+        self._gen_stmt(node.body)
 
         if not self._terminated():
-            self.builder.ret(ZERO)
+            self.builder.store(ZERO, self.curr_ret)
+            self.builder.ret(self.builder.load(self.curr_ret, name="retval"))
 
-        return self.module
+        self.builder = saved_builder
+        self.env = saved_env
+        self.loop_stack = saved_loop
+        self.curr_fn = saved_fn
+        self.curr_ret = saved_ret
+
+
 
     def _terminated(self) -> bool:
         return self.builder.block is not None and self.builder.block.is_terminated
@@ -186,6 +273,8 @@ class LLVMCodeGen:
             return ir.Constant(I64, int(node.value))
         if isinstance(node, BoolLiteral):
             return ir.Constant(I64, 1 if node.value else 0)
+        if isinstance(node, Call):
+            return self._gen_call(node)
         if isinstance(node, Ident):
             if node.name not in self.env:
                 raise CodegenError(f"use of undeclared '{node.name}'")
@@ -195,6 +284,22 @@ class LLVMCodeGen:
         if isinstance(node, AstBinOp):
             return self._gen_bin_op(node)
         raise CodegenError(f"unknown expression: '{type(node).__name__}'")
+
+    def _gen_call(self, node: Call) -> ir.Value:
+        if not isinstance(node.callee, Ident):
+            raise CodegenError("call target must be an identifier")
+        name = node.callee.name
+        if name not in self.functions:
+            fnty = ir.FunctionType(I64, [I64] * len(node.args))
+            fn = ir.Function(self.module, fnty, name=name)
+            self.functions[name] = fn
+        fn = self.functions[name]
+        if len(node.args) != len(fn.args):
+            raise CodegenError(
+                f"function '{name}' expects {len(fn.args)} args, got {len(node.args)}"
+            )
+        args = [self._gen_expr(a) for a in node.args]
+        return self.builder.call(fn, args, name=f"call_{name}")
 
     def _gen_unary_op(self, node: AstUnaryOp) -> ir.Value:
         operand = self._gen_expr(node.operand)
