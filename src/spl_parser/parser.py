@@ -5,6 +5,7 @@ from .ast_nodes import (
     Node, Expr, Stmt, IntLiteral, Ident, BinOp, UnaryOp,
     Assign, Declare, Return, ExprStmt, Program, Error,
     If, While, Break, Continue, Block, BoolLiteral,
+    Call, FuncDecl, ExternDecl,
 )
 
 class Parser:
@@ -70,6 +71,20 @@ class Parser:
         self._declared = {}
         self.errors = []
         body: list[Stmt] = []
+
+        while True:
+            before = self.pos
+            if self._check(TokenType.EXTERN):
+                body.append(self._parse_extern_decl())
+            elif self._check(TokenType.DEF):
+                body.append(self._parse_func_decl())
+            else:
+                break
+
+            if self.pos == before:
+                self._synchronize()
+
+
         while not self._at_end():
             before = self.pos
             stmt = self.parse_statement()
@@ -105,6 +120,77 @@ class Parser:
         if t.type == TokenType.IDENT and self._peek(1).type == TokenType.ASSIGN:
             return self._parse_assign()
         return self._parse_expr_stmt()
+
+    def _parse_extern_decl(self) -> ExternDecl | Error:
+        self._advance() # "extern"
+
+        if not self._expect(TokenType.DEF):
+            return self._sync_error_at_current()
+
+        if not self._check(TokenType.IDENT):
+            return self._sync_error_at_current()
+
+        ident = self._advance()
+        name = ident.value
+
+        if not self._expect(TokenType.LPAREN):
+            return self._sync_error_at_current()
+
+        params = self._parse_param_list()
+
+        if not self._check(TokenType.RPAREN):
+            return self._sync_error_at_current()
+        self._advance()
+
+        semi = self._consume_semi()
+        if not semi:
+            return self._sync_error_at_current()
+
+        return ExternDecl(line=semi.line, column=semi.column, name=name, params=params)
+
+    def _parse_param_list(self) -> list[Ident]:
+        params: list[Ident] = []
+        if self._check(TokenType.RPAREN):
+            return params
+        if not self._check(TokenType.IDENT):
+            return params
+        while self._check(TokenType.IDENT):
+            ident = self._advance()
+            params.append(Ident(line=ident.line, column=ident.column, name=ident.value))
+            if self._check(TokenType.COMMA):
+                self._advance()
+                continue
+            break
+        return params
+
+    def _parse_func_decl(self) -> FuncDecl | Error:
+        self._advance() # "def"
+
+        if not self._check(TokenType.IDENT):
+            return self._sync_error_at_current()
+
+        ident = self._advance()
+        name = ident.value
+
+        if not self._expect(TokenType.LPAREN):
+            return self._sync_error_at_current()
+
+        params = self._parse_param_list()
+
+        if not self._expect(TokenType.RPAREN):
+            return self._sync_error_at_current()
+
+        if not self._check(TokenType.LBRACE):
+            return self._sync_error_at_current()
+
+        body = self._parse_block()
+
+        if isinstance(body, Block):
+            return FuncDecl(line=body.line, column=body.column,
+                            name=name, params=params, body=body)
+
+        return body # Error at this point
+
 
     def _parse_return(self) -> Return | Error:
         self._advance()
@@ -337,7 +423,33 @@ class Parser:
             op = self._advance()
             operand = self._parse_unary()
             return UnaryOp(line=op.line, column=op.column, op=op.value, operand=operand)
-        return self._parse_primary()
+
+        return self._parse_call()
+
+    def _parse_call(self) -> Expr:
+        callee = self._parse_primary()
+        while self._check(TokenType.LPAREN):
+            self._advance()
+            args = self._parse_arg_list()
+            if not self._check(TokenType.RPAREN):
+                t = self._peek()
+                self.errors.append(Error(line=t.line, column=t.column, message="expected ')' after call args"))
+                return Call(line=callee.line, column=callee.column, callee=callee, args=args)
+
+            rp = self._advance()
+            callee = Call(line=rp.line, column=rp.column, callee=callee, args=args)
+
+        return callee
+
+    def _parse_arg_list(self) -> list[Expr]:
+        args: list[Expr] = []
+        if self._check(TokenType.RPAREN):
+            return args
+        args.append(self._parse_expr())
+        while self._check(TokenType.COMMA):
+            self._advance()
+            args.append(self._parse_expr())
+        return args
 
     def _parse_primary(self) -> Expr | Error:
         t = self._peek()

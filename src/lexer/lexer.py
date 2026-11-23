@@ -17,6 +17,7 @@ _SINGLE_CHAR: dict[str, TokenType] = {
     "<": TokenType.LT,
     ">": TokenType.GT,
     "!": TokenType.NOT,
+    ",": TokenType.COMMA,
 }
 
 _TWO_CHAR: dict[str, TokenType] = {

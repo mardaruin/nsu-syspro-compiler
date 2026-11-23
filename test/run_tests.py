@@ -376,6 +376,10 @@ def discover_tests(test_root, grammar, stage_filter, name_filter, skip_dir=None,
         if "compiler" in meta_stages and "run" not in meta_stages:
             found_stages.add("run")
 
+        for implicit_stage in ("compile", "run"):
+            if implicit_stage in found_stages and implicit_stage not in meta_stages:
+                found_stages.discard(implicit_stage)
+
         # If the test has an explicit non-zero exit contract but no golden
         # and no stages list, run for all configurable stages (user can filter
         # with --stage). Only do this if no golden files were found either.

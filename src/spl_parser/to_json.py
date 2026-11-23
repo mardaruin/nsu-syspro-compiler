@@ -4,6 +4,7 @@ from .ast_nodes import (
     Assign, BinOp, Declare, Error, ExprStmt, Ident,
     IntLiteral, BoolLiteral, Program, Return, UnaryOp,
     If, While, Break, Continue, Block,
+    Call, FuncDecl, ExternDecl,
 )
 
 
@@ -81,6 +82,35 @@ def node_to_dict(node):
                 "kind": "BinOp", "op": node.op,
                 "left": node_to_dict(node.left),
                 "right": node_to_dict(node.right)}
+
+
+    if isinstance(node, Call):
+        return {
+            "kind": "Call",
+            "line": node.line,
+            "column": node.column,
+            "callee": node_to_dict(node.callee),
+            "args": [node_to_dict(a) for a in node.args],
+        }
+
+    if isinstance(node, ExternDecl):
+        return {
+            "kind": "ExternDecl",
+            "line": node.line,
+            "column": node.column,
+            "name": node.name,
+            "params": [node_to_dict(p) for p in node.params],
+        }
+
+    if isinstance(node, FuncDecl):
+        return {
+            "kind": "FuncDecl",
+            "line": node.line,
+            "column": node.column,
+            "name": node.name,
+            "params": [node_to_dict(p) for p in node.params],
+            "body": node_to_dict(node.body),
+        }
 
     if isinstance(node, Error):
         return {"line": node.line, "column": node.column,

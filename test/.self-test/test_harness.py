@@ -480,7 +480,7 @@ def compiler_config(compile_cmd, run_cmd, run_preprocess=None):
 
 
 def test_compiler_run_end_to_end_pass(harness, run):
-    harness.add_test("hw", src="0;", stdout="hello\n")
+    harness.add_test("hw", src="0;", stdout="hello\n", meta={"stages": ["run"]})
     cfg = harness.write_config(
         stages=compiler_config(compile_exe('print("hello")'), ["python3", "{exe}"]))
     rc, out = run(["test", "--config", cfg])
@@ -488,7 +488,7 @@ def test_compiler_run_end_to_end_pass(harness, run):
 
 
 def test_compiler_stdin_and_run_preprocess(harness, run):
-    harness.add_test("hw", src="0;", stdout="WORLD\n")
+    harness.add_test("hw", src="0;", stdout="WORLD\n", meta={"stages": ["run"]})
     harness.write("hw", "stdin", "world\n")
     stages = compiler_config(
         compile_exe("import sys;print(sys.stdin.read().strip())"),
@@ -514,26 +514,26 @@ def test_compiler_compile_failure(harness, run):
 def test_compiler_tolerance_pass_and_diff_fail(harness, run):
     golden = "1.0 2.0\n"
     stages = compiler_config(compile_exe("print('1.05 1.99')"), ["python3", "{exe}"])
-    harness.add_test("hw", src="0;", stdout=golden)
-    harness.add_test("hw", src="0;", stdout=golden, meta={"tolerance": 0.1})
+    harness.add_test("hw", src="0;", stdout=golden, meta={"stages": ["run"]})
+    harness.add_test("hw", src="0;", stdout=golden, meta={"stages": ["run"], "tolerance": 0.1})
     rc, out = run(["test", "--config", harness.write_config(stages=stages)])
     assert rc == 0 and "PASS  compile/hw" in out
     # Second run with same test but no tolerance in meta -> will fail because
     # the golden differs from actual output. But meta doesn't have tolerance,
     # so we create the test without tolerance meta.
-    harness.add_test("hw2", src="0;", stdout=golden)
+    harness.add_test("hw2", src="0;", stdout=golden, meta={"stages": ["run"]})
     rc, out = run(["test", "--config", harness.write_config(stages=stages)])
     assert rc == 1 and "FAIL  compile/hw2" in out
 
 
 def test_compiler_exit_contract(harness, run):
     stages = compiler_config(compile_exe("import sys;sys.exit(5)"), ["python3", "{exe}"])
-    harness.add_test("hw", src="0;", meta={"exit": "nonzero", "stages": ["compile"]})
+    harness.add_test("hw", src="0;", meta={"exit": "nonzero", "stages": ["compile", "run"]})
     rc, out = run(["test", "--config", harness.write_config(stages=stages)])
     assert rc == 0 and "PASS  compile/hw" in out
 
     # Exact 0 contract with a golden -> fails on exit mismatch
-    harness.add_test("hw2", src="0;", stdout="unused\n", meta={"exit": 0})
+    harness.add_test("hw2", src="0;", stdout="unused\n", meta={"stages": ["run"], "exit": 0})
     rc, out = run(["test", "--config", harness.write_config(stages=stages)])
     assert rc == 1 and "exit: expected 0, got 5" in out
 

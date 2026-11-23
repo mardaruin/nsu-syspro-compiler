@@ -1,0 +1,5 @@
+{"grammar": {
+    "lexer": ["3"],
+    "parser": ["3"],
+    "llvm": ["3"]
+  }}
