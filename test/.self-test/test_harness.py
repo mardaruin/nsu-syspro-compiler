@@ -533,7 +533,7 @@ def test_compiler_exit_contract(harness, run):
     assert rc == 0 and "PASS  compile/hw" in out
 
     # Exact 0 contract with a golden -> fails on exit mismatch
-    harness.add_test("hw2", src="0;", stdout="unused\n", meta={"exit": 0})
+    harness.add_test("hw2", src="0;", stdout="unused\n", meta={"stages": ["run"], "exit": 0})
     rc, out = run(["test", "--config", harness.write_config(stages=stages)])
     assert rc == 1 and "exit: expected 0, got 5" in out
 
